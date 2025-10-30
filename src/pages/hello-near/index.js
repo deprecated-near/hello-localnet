@@ -1,0 +1,117 @@
+import { Cards } from "@/components/cards";
+
+import { useEffect, useState } from "react";
+import styles from "@/styles/app.module.css";
+
+import { HelloNearContract } from "../../config";
+
+import { useNear } from "@/hooks/useNear";
+
+export default function HelloNear() {
+  const { signedAccountId, viewFunction, callFunction, provider, wallet } =
+    useNear();
+
+  const [greeting, setGreeting] = useState("loading...");
+  const [newGreeting, setNewGreeting] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [showSpinner, setShowSpinner] = useState(false);
+
+  const [isContractDeployed, setContractDeployed] = useState(false);
+
+  useEffect(() => {
+    provider
+      .viewAccount(HelloNearContract)
+      .then((account) => {
+        if (account.code_hash !== "11111111111111111111111111111111") {
+          setContractDeployed(true);
+        } else {
+          setContractDeployed(false);
+        }
+      })
+      .catch(() => setContractDeployed(false));
+  }, []);
+
+  useEffect(() => {
+    if (!isContractDeployed) return;
+
+    viewFunction({
+      contractId: HelloNearContract,
+      method: "get_greeting",
+    }).then((greeting) => setGreeting(greeting));
+  }, [isContractDeployed]);
+
+  useEffect(() => {
+    setLoggedIn(!!signedAccountId);
+  }, [signedAccountId]);
+
+  const saveGreeting = async () => {
+    // Try to store greeting, revert if it fails
+    callFunction({
+      contractId: HelloNearContract,
+      method: "set_greeting",
+      args: { greeting: newGreeting },
+    }).then(async () => {
+      const greeting = await viewFunction({
+        contractId: HelloNearContract,
+        method: "get_greeting",
+      });
+      setGreeting(greeting);
+      setShowSpinner(false);
+    });
+
+    // Assume the transaction will be successful and update the UI optimistically
+    setShowSpinner(true);
+    setGreeting(newGreeting);
+  };
+
+  return (
+    <main className={styles.main}>
+      <div className={styles.description}>
+        <p>
+          Interacting with the contract: &nbsp;
+          <code className={styles.code}>{HelloNearContract}</code>
+        </p>
+      </div>
+
+      <div className={styles.center}>
+        <h1 className="w-100">
+          The contract says: <code>{greeting}</code>
+        </h1>
+        <div className="input-group" hidden={!loggedIn || !isContractDeployed}>
+          <input
+            type="text"
+            className="form-control w-20"
+            placeholder="Store a new greeting"
+            onChange={(t) => setNewGreeting(t.target.value)}
+          />
+          <div className="input-group-append">
+            <button className="btn btn-secondary" onClick={saveGreeting}>
+              <span hidden={showSpinner}> Save </span>
+              <i
+                className="spinner-border spinner-border-sm"
+                hidden={!showSpinner}
+              ></i>
+            </button>
+          </div>
+        </div>
+        <div className="w-100 text-end align-text-center" hidden={loggedIn}>
+          <p className="m-0"> Please login to change the greeting </p>
+        </div>
+        <div
+          className="w-100 text-end align-text-center"
+          hidden={isContractDeployed}
+        >
+          <p className="m-0">
+            The contract{" "}
+            <code className={styles.code}>{HelloNearContract}</code> doesn't
+            exist
+          </p>
+          <p className="m-0">
+            Please follow the instrucitons to deploy on using "near-cli-rs"
+          </p>
+        </div>
+      </div>
+      <Cards />
+    </main>
+  );
+}
