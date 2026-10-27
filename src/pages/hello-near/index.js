@@ -20,7 +20,7 @@ export default function HelloNear() {
 
   useEffect(() => {
     provider
-      .viewAccount(HelloNearContract)
+      .viewAccount({ accountId: HelloNearContract })
       .then((account) => {
         if (account.code_hash !== "11111111111111111111111111111111") {
           setContractDeployed(true);
@@ -29,7 +29,7 @@ export default function HelloNear() {
         }
       })
       .catch(() => setContractDeployed(false));
-  }, []);
+  }, [provider]);
 
   useEffect(() => {
     if (!isContractDeployed) return;
@@ -38,7 +38,7 @@ export default function HelloNear() {
       contractId: HelloNearContract,
       method: "get_greeting",
     }).then((greeting) => setGreeting(greeting));
-  }, [isContractDeployed]);
+  }, [isContractDeployed, viewFunction]);
 
   useEffect(() => {
     setLoggedIn(!!signedAccountId);
@@ -103,11 +103,11 @@ export default function HelloNear() {
         >
           <p className="m-0">
             The contract{" "}
-            <code className={styles.code}>{HelloNearContract}</code> doesn't
+            <code className={styles.code}>{HelloNearContract}</code> doesn&apos;t
             exist
           </p>
           <p className="m-0">
-            Please follow the instrucitons to deploy on using "near-cli-rs"
+            Please follow the instructions to deploy using &quot;near-cli-rs&quot;
           </p>
         </div>
       </div>

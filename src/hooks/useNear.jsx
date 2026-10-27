@@ -1,12 +1,18 @@
 import { NearConnector } from "@hot-labs/near-connect";
-import { useEffect, useState } from "react";
-import { JsonRpcProvider } from "@near-js/providers";
+import { useCallback, useEffect, useState } from "react";
+import { JsonRpcProvider } from "near-api-js";
 
 let connector;
-const provider = new JsonRpcProvider({ url: process.env.NEXT_PUBLIC_RPC_URL });
+const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || "http://localhost:3030";
+const provider = new JsonRpcProvider({ url: rpcUrl });
 
 if (typeof window !== "undefined") {
-  connector = new NearConnector({ network: "testnet" });
+  connector = new NearConnector({
+    // NearConnector exposes mainnet/testnet slots. Point its testnet provider at
+    // the same local node configured in the wallet's custom-network settings.
+    network: "testnet",
+    providers: { testnet: [rpcUrl] },
+  });
 }
 
 export function useNear() {
@@ -36,8 +42,7 @@ export function useNear() {
     async function onSignIn(payload) {
       console.log("Signed in with payload", payload);
       setWallet(payload.wallet);
-      const accountId = await payload.wallet.getAddress();
-      setSignedAccountId(accountId);
+      setSignedAccountId(payload.accounts[0]?.accountId ?? "");
     }
 
     connector.on("wallet:signOut", onSignOut);
@@ -48,23 +53,21 @@ export function useNear() {
       connector.off("wallet:signOut", onSignOut);
       connector.off("wallet:signIn", onSignIn);
     };
-  }, [connector]);
+  }, []);
 
-  async function signIn() {
+  const signIn = useCallback(async () => {
     const wallet = await connector.connect();
     console.log("Connected wallet", wallet);
-  }
+  }, []);
 
-  async function signOut() {
+  const signOut = useCallback(async () => {
     await connector.disconnect(wallet);
-    console.log("Disonnected wallet");
-  }
+    console.log("Disconnected wallet");
+  }, [wallet]);
 
-  async function viewFunction({ contractId, method, args = {} }) {
-    return provider.callFunction(contractId, method, args, {
-      finality: 'optimistic'
-    });
-  }
+  const viewFunction = useCallback(async ({ contractId, method, args = {} }) => {
+    return provider.callFunction({ contractId, method, args, blockQuery: { finality: 'optimistic' } });
+  }, []);
 
   async function callFunction({
     contractId,
