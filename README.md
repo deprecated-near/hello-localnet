@@ -2,6 +2,14 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
+Use Node.js 22.22.2 or newer and run `pnpm install --frozen-lockfile`.
+Create `.env.local` with `NEXT_PUBLIC_RPC_URL=http://localhost:3030` and
+start the sandbox at that address. Configure the same custom local network in
+Intear Wallet before connecting; accounts and contracts must exist on that node.
+Both contract queries and the connector use this RPC URL. The connector's testnet
+slot is used for compatibility with its mainnet/testnet network interface.
+
+
 First, run the development server:
 
 ```bash

@@ -21,7 +21,7 @@ export const Navigation = () => {
       setAction(() => signIn);
       setLabel('Login');
     }
-  }, [signedAccountId, loading]);
+  }, [signedAccountId, loading, signIn, signOut]);
 
   return (
     <nav className="navbar navbar-expand-lg">
